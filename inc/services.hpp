@@ -62,8 +62,8 @@ class Client: public Socket {
         /// @param peerPort 
         /// @param localHost 
         /// @param localPort 
-        Client(std::int32_t& _protocol, const bool& blocking, const bool& ipv4, const std::string& peerHost, const std::uint16_t& peerPort,
-               const std::string& localHost="0.0.0.0", const std::uint16_t& localPort=0);
+        Client(const std::int32_t& _protocol, const bool& blocking, const bool& ipv4, const std::string& peerHost, const std::uint16_t& peerPort,
+               const std::string& localHost, const std::uint16_t& localPort);
 
         /// @brief 
         /// @param _handle 
@@ -83,7 +83,7 @@ class Client: public Socket {
         /// @param _ipv4 
         /// @param _localHost 
         /// @param _localPort 
-        Client(const std::int32_t& _protocol, const bool& blocking, const bool& _ipv4, const std::string& _localHost="0.0.0.0", const std::uint16_t& _localPort=0);
+        Client(const std::int32_t& _protocol, const bool& blocking, const bool& _ipv4, const std::string& _localHost, const std::uint16_t& _localPort);
 
         virtual ~Client() = default;
         Client() = delete;
@@ -104,14 +104,14 @@ class Client: public Socket {
         /// @param len 
         /// @return
 
-        virtual std::int32_t rx(std::vector<char>& out, const std::int32_t& len=1024);
+        std::int32_t rx(std::string& out, const std::int32_t& len=1024);
         /// @brief 
         /// @param in 
         /// @param len 
         /// @return
-
-        virtual std::int32_t tx(const std::vector<char>& in, const std::int32_t& len);
-        virtual std::int32_t onReceive(std::vector<char> out, std::int32_t out_len);
+        std::int32_t rx(const std::int32_t& fd, std::string& out, const std::int32_t& len=1024);
+        std::int32_t tx(const std::string& in);
+        virtual std::int32_t onReceive(const std::string& out);
 
     private:
         std::string m_peerHost;
@@ -149,7 +149,7 @@ class Server: public Client {
         bool add_client(std::shared_ptr<Client> _client);
         bool remove_client(const std::int32_t& _fd);
         std::shared_ptr<Client> get_client(const std::int32_t& _fd);
-        virtual std::int32_t onReceive(std::vector<char> out, std::int32_t out_len);
+        virtual std::int32_t onReceive(const std::string& out);
 
     private:
         std::vector<std::pair<std::int32_t, std::shared_ptr<Client>>> m_clients;

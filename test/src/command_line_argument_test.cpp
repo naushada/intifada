@@ -5,7 +5,16 @@
 
 CommandLineArgumentTest::CommandLineArgumentTest() {
     std::int32_t argc;
-    char* argv[22] = {
+    char *const argv[] = {
+        {"intifada_test"},
+        /// @brief Command Arguments...
+        {"--role"},       {"client"},
+        {"--peer-host"},  {"192.168.1.1"},
+        {"--peer-port"},  {"58989"}
+    };
+    argc = 7;
+    #if 0
+    std::vector<std::string> arguments = {
         {"intifada_test"},
         /// @brief Command Arguments...
         {"--role"},       {"client"},
@@ -17,9 +26,9 @@ CommandLineArgumentTest::CommandLineArgumentTest() {
         {"--userid"},     {"abcd"},
         {"--password"},   {"abcd1234"},
         {"--timeout"},    {"10"},
-        {"--long-poll"},  {"20"},
+        {"--long-poll"},  {"20"}
     };
-    argc = 21;
+    #endif
     m_commandArgument = std::make_shared<CommandLineArgument>(argc, argv);
 }
 
@@ -33,7 +42,8 @@ void CommandLineArgumentTest::SetUp() {
 }
 
 void CommandLineArgumentTest::TearDown() {
-    //m_commandArgument.reset();
+    std::cout << "TearDown & releasing Memory" << std::endl;
+    m_commandArgument.reset();
 }
 
 void CommandLineArgumentTest::TestBody() {
@@ -45,6 +55,8 @@ std::shared_ptr<CommandLineArgument> CommandLineArgumentTest::commandInst() cons
 }
 
 TEST_F(CommandLineArgumentTest, Only3CommandLineArgument) {
+    std::cout << "ent:" << commandInst()->arguments().size() << std::endl;
+    commandInst()->dumpKey();
     Value value;
     auto result = commandInst()->getValue("role", value);
     EXPECT_TRUE(result);
@@ -63,8 +75,26 @@ TEST_F(CommandLineArgumentTest, Only3CommandLineArgument) {
 }
 
 TEST_F(CommandLineArgumentTest, Only5CommandLineArgument) {
-    
+    std::int32_t argc;
+    char *const argv[] = {
+        {"intifada_test"},
+        /// @brief Command Arguments...
+        {"--role"},       {"server"},
+        {"--peer-host"},  {"192.168.1.1"},
+        {"--peer-port"},  {"58989"},
+        {"--local-host"}, {"192.168.2.1"},
+        {"--local-port"}, {"58980"},
+        {"--protocol"},   {"tcp"},
+        {"--userid"},     {"abcd"},
+        {"--password"},   {"abcd1234"},
+        {"--timeout"},    {"10"},
+        {"--long-poll"},  {"20"}
+    };
+    argc = 21;
     Value value;
+    commandInst()->parseOptions(argc, argv);
+    std::cout << "ent:" << commandInst()->arguments().size() << std::endl;
+    commandInst()->dumpKey();
     auto result = commandInst()->getValue("role", value);
     EXPECT_TRUE(result);
     std::string out;

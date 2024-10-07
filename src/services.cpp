@@ -79,7 +79,7 @@ Socket::~Socket() {
     }
 }
 
-Client::Client(std::int32_t& _protocol, const bool& _blocking, const bool& _ipv4, const std::string& _peerHost, const std::uint16_t& _peerPort,
+Client::Client(const std::int32_t& _protocol, const bool& _blocking, const bool& _ipv4, const std::string& _peerHost, const std::uint16_t& _peerPort,
                const std::string& _localHost, const std::uint16_t& _localPort): Socket(_protocol, _blocking) {
     peerHost(_peerHost);
     peerPort(_peerPort);
@@ -254,37 +254,34 @@ std::int32_t Client::connectAsync() {
     return(ret);
 }
 
-std::int32_t Client::rx(std::vector<char>& out, const std::int32_t& len) {
+std::int32_t Client::rx(const std::int32_t& fd, std::string& out, const std::int32_t& len) {
     std::int32_t ret = -1;
-
-    if(len < 0) {
-        return(ret);
-    }
 
     switch (protocol())
     {
         case IPPROTO_TCP:
         {
             std::stringstream ss;
-            std::vector<char> buffer(len);
+            std::string buffer;
             std::int32_t offset = 0;
             do {
-                auto ret = ::recv(handle(), buffer.data(), len - offset, 0);
+                auto ret = ::recv(fd, (void *)buffer.data(), len - offset, 0);
                 if(ret > 0) {
+
                     buffer.resize(ret);
-                    ss << std::string(buffer.begin(), buffer.end());
+                    ss << buffer;
                     offset += ret;
-                    buffer.resize(len);
                     buffer.clear();
-                } else {
+
+                } else if(!ret) {
                     // TODO:: Add Error log
-                    break;
+                    std::cout <<__FUNCTION__<<":"<<__LINE__<<"::recv for handle:" << handle() <<"returns length:" << ret << std::endl;
+                    return(ret);
                 }
             } while(offset != len);
 
-            if(ss.str().length()) {
-                out.resize(ss.str().length());
-                std::copy(ss.str().begin(), ss.str().end(), out.begin());
+            if(!ss.str().empty()) {
+                out.assign(ss.str());
                 ret = ss.str().length();
             }
         }
@@ -298,7 +295,7 @@ std::int32_t Client::rx(std::vector<char>& out, const std::int32_t& len) {
                 struct sockaddr_in peerAddr;
                 socklen_t slen = sizeof(peerAddr);
 
-                auto ret = ::recvfrom(handle(), out.data(), len, 0, (struct sockaddr *)&peerAddr, &slen);
+                auto ret = ::recvfrom(fd,(void *) out.data(), len, 0, (struct sockaddr *)&peerAddr, &slen);
                 if(ret < 0) {
                     // TODO:: Add Error log        
                 } else {
@@ -312,7 +309,7 @@ std::int32_t Client::rx(std::vector<char>& out, const std::int32_t& len) {
                 struct sockaddr_in6 peerAddr6;
                 socklen_t slen6 = sizeof(peerAddr6);
 
-                auto ret = ::recvfrom(handle(), out.data(), len, 0, (struct sockaddr *)&peerAddr6, &slen6);
+                auto ret = ::recvfrom(handle(),(void *) out.data(), len, 0, (struct sockaddr *)&peerAddr6, &slen6);
                 if(ret < 0) {
                     // TODO:: Add Error log        
                 } else {
@@ -332,9 +329,88 @@ std::int32_t Client::rx(std::vector<char>& out, const std::int32_t& len) {
     return(ret);
 }
 
-std::int32_t Client::tx(const std::vector<char>& in, const std::int32_t& len) {
+std::int32_t Client::rx(std::string& out, const std::int32_t& len) {
     std::int32_t ret = -1;
 
+    if(len < 0) {
+        return(ret);
+    }
+
+    switch (protocol())
+    {
+        case IPPROTO_TCP:
+        {
+            std::stringstream ss;
+            std::string buffer;
+            std::int32_t offset = 0;
+            do {
+                auto ret = ::recv(handle(), (void *)buffer.data(), len - offset, 0);
+                if(ret > 0) {
+
+                    buffer.resize(ret);
+                    ss << buffer;
+                    offset += ret;
+                    buffer.clear();
+
+                } else if(!ret) {
+                    // TODO:: Add Error log
+                    std::cout <<__FUNCTION__<<":"<<__LINE__<<"::recv for handle:" << handle() <<"returns length:" << ret << std::endl;
+                    return(ret);
+                }
+            } while(offset != len);
+
+            if(!ss.str().empty()) {
+                out.assign(ss.str());
+                ret = ss.str().length();
+            }
+        }
+            break;
+        
+        case IPPROTO_UDP:
+        {
+
+            if(ipv4()) {
+
+                struct sockaddr_in peerAddr;
+                socklen_t slen = sizeof(peerAddr);
+
+                auto ret = ::recvfrom(handle(),(void *) out.data(), len, 0, (struct sockaddr *)&peerAddr, &slen);
+                if(ret < 0) {
+                    // TODO:: Add Error log        
+                } else {
+                    out.resize(ret);
+                    peerPort(::ntohs(peerAddr.sin_port));
+                    peerHost(::inet_ntoa(peerAddr.sin_addr));
+                }
+
+            } else {
+
+                struct sockaddr_in6 peerAddr6;
+                socklen_t slen6 = sizeof(peerAddr6);
+
+                auto ret = ::recvfrom(handle(),(void *) out.data(), len, 0, (struct sockaddr *)&peerAddr6, &slen6);
+                if(ret < 0) {
+                    // TODO:: Add Error log        
+                } else {
+                    out.resize(ret);
+                    peerPort(::ntohs(peerAddr6.sin6_port));
+                    std::string ipv6Addr(reinterpret_cast<char*>(peerAddr6.sin6_addr.s6_addr), sizeof(peerAddr6.sin6_addr.s6_addr)*sizeof(std::uint8_t));
+                    peerHost(ipv6Addr);
+                }
+            }
+        }
+            break;
+        
+        default:
+            break;
+    }
+
+    return(ret);
+}
+
+std::int32_t Client::tx(const std::string& in) {
+    std::int32_t ret = -1;
+    std::int32_t len = in.length();
     switch (protocol())
     {
         case IPPROTO_TCP:
@@ -400,7 +476,7 @@ std::int32_t Client::tx(const std::vector<char>& in, const std::int32_t& len) {
     return(ret);
 }
 
-std::int32_t Client::onReceive(std::vector<char> out, std::int32_t out_len) {
+std::int32_t Client::onReceive(const std::string& out) {
 
 }
 
@@ -437,6 +513,10 @@ std::int32_t Server::bind() {
             freeaddrinfo(result);
         }
 
+        const int enable = 1;
+        setsockopt(handle(), SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
+        setsockopt(handle(), SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int));
+    
         socklen_t len = sizeof(selfAddr);
         ret = ::bind(handle(), (struct sockaddr *)&selfAddr, len);
         if(ret < 0) {
@@ -523,8 +603,8 @@ std::shared_ptr<Client> Server::get_client(const std::int32_t& _fd) {
     return(nullptr);
 }
 
-std::int32_t Server::onReceive(std::vector<char> out, std::int32_t out_len) {
-
+std::int32_t Server::onReceive(const std::string& out) {
+    std::cout << __FUNCTION__ << ":" << __LINE__<<"Server out:" << out << std::endl;
 }
 
 #endif /*__services_cpp__*/

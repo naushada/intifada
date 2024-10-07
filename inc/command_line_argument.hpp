@@ -59,14 +59,26 @@ class Value: public std::variant<std::string, std::uint16_t, std::uint32_t, std:
 
 class CommandLineArgument {
     public:
-        CommandLineArgument(std::int32_t argc, char* argv[]);
-        bool parseOptions(std::int32_t argc, char* argv[]);
+        std::vector<struct option> options = {
+            {"role",       required_argument, 0, 'r'},
+            {"peer-host",  required_argument, 0, 'h'},
+            {"peer-port",  required_argument, 0, 'p'},
+            {"local-host", required_argument, 0, 'l'},
+            {"local-port", required_argument, 0, 'o'},
+            {"protocol",   required_argument, 0, 't'},
+            {"userid",     required_argument, 0, 'u'},
+            {"password",   required_argument, 0, 'a'},
+            {"timeout",    required_argument, 0, 'm'},
+            {"long-poll",  required_argument, 0, 'n'}
+        };
+        CommandLineArgument(std::int32_t argc, char *const argv[]);
+        bool parseOptions(std::int32_t argc, char *const argv[]);
         ~CommandLineArgument();
         bool getValue(const std::string& argument, Value& value);
-        
+        void dumpKey();
+        std::vector<std::pair<std::string, Value>> arguments();
     private:
         std::vector<std::pair<std::string, Value>> m_arguments;
-
 };
 
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16.3)
-project(intifada)
+project(smtc)
 find_package(GTest REQUIRED)
 
 include_directories(../inc)
@@ -16,11 +16,11 @@ file(GLOB SOURCES "src/*.cpp" "../src/services.cpp"
 
 enable_testing()
 
-add_executable(intifada_test ${SOURCES})
-target_link_libraries(intifada_test gtest_main)
-target_link_libraries(intifada_test pthread)
-target_link_libraries(intifada_test ssl crypto)
-target_link_libraries(intifada_test gtest)
+add_executable(smtc_test ${SOURCES})
+target_link_libraries(smtc_test gtest_main)
+target_link_libraries(smtc_test pthread)
+target_link_libraries(smtc_test ssl crypto)
+target_link_libraries(smtc_test gtest)
 
-add_test(intifada_gtests intifada_test)
-gtest_discover_tests(intifada_test)
+add_test(smtc_gtests smtc_test)
+gtest_discover_tests(smtc_test)

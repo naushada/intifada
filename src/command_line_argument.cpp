@@ -4,30 +4,20 @@
 
 #include "command_line_argument.hpp"
 
-std::vector<struct option> options = {
-    {"role",       required_argument, 0, 'r'},
-    {"peer-host",  required_argument, 0, 'h'},
-    {"peer-port",  required_argument, 0, 'p'},
-    {"local-host", required_argument, 0, 'l'},
-    {"locap-port", required_argument, 0, 'o'},
-    {"protocol",   required_argument, 0, 't'},
-    {"userid",     required_argument, 0, 'u'},
-    {"password",   required_argument, 0, 'a'},
-    {"timeout",    required_argument, 0, 'm'},
-    {"long-poll",  required_argument, 0, 'n'}
-};
+std::vector<std::pair<std::string, Value>> CommandLineArgument::arguments() {
+    return(m_arguments);
+}
 
-
-CommandLineArgument::CommandLineArgument(std::int32_t argc, char* argv[]) {
+CommandLineArgument::CommandLineArgument(std::int32_t argc, char * const argv[]) {
     parseOptions(argc, argv);
 }
 
-bool CommandLineArgument::parseOptions(std::int32_t argc, char* argv[]) {
+bool CommandLineArgument::parseOptions(std::int32_t argc, char * const argv[]) {
     std::int32_t c;
     std::int32_t option_index = 0;
-    
     Value value;
-    
+    optind = 1;
+    arguments().clear();
     while ((c = getopt_long(argc, argv, "r:h:p:l:o:t:u:a:m:n:", options.data(), &option_index)) != -1) {
         switch (c) {
             case 'r':
@@ -51,8 +41,8 @@ bool CommandLineArgument::parseOptions(std::int32_t argc, char* argv[]) {
             break;
             case 'p':
             {
-                auto tmp = std::stoi(optarg);
-                value = *reinterpret_cast<std::uint16_t*>(&tmp);
+                auto tmp = std::atoi(optarg);
+                value = static_cast<std::uint16_t>(tmp);
                 m_arguments.emplace_back(std::make_pair("peer-port", value));
             }
             break;
@@ -64,8 +54,8 @@ bool CommandLineArgument::parseOptions(std::int32_t argc, char* argv[]) {
             break;
             case 'o':
             {
-                auto tmp = std::stoi(optarg);
-                value = *reinterpret_cast<std::uint16_t*>(&tmp);
+                std::uint16_t tmp = std::atoi(optarg);
+                value = static_cast<std::uint16_t>(tmp);
                 m_arguments.emplace_back(std::make_pair("local-port", value));
             }
             break;
@@ -124,7 +114,11 @@ bool CommandLineArgument::getValue(const std::string& argument, Value& value) {
     return(it != m_arguments.end());
 }
 
-
+void CommandLineArgument::dumpKey() {
+    for(const auto& argument: m_arguments) {
+        std::cout << "key:" << argument.first << std::endl;
+    }
+}
 
 
 

@@ -22,7 +22,6 @@ class CommandLineArgumentTest : public ::testing::Test
         virtual void TearDown() override;
         virtual void TestBody() override;
         std::shared_ptr<CommandLineArgument> commandInst() const;
-
     private:
         std::shared_ptr<CommandLineArgument> m_commandArgument;
         
